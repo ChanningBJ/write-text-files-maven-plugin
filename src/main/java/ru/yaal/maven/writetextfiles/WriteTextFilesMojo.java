@@ -5,7 +5,6 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
-import org.apache.maven.project.MavenProject;
 
 import java.io.File;
 import java.nio.charset.Charset;
@@ -31,25 +30,22 @@ public class WriteTextFilesMojo extends AbstractMojo {
 
     @Parameter(defaultValue = "false")
     @SuppressWarnings("unused")
-    private Boolean nullValueException;
+    private Boolean throwExceptionOnNull;
 
     @Parameter(defaultValue = "UTF-8")
     @SuppressWarnings("unused")
     private String charset;
 
-    @Parameter(defaultValue = "${project}", readonly = true)
-    private MavenProject project;
-
     @Override
     public void execute() throws MojoExecutionException, MojoFailureException {
         try {
-            PropertyReplacer replacer = new PropertyReplacer(project, nullValue, nullValueException);
+            NullReplacer replacer = new NullReplacer(nullValue, throwExceptionOnNull);
             for (FileParameter file : files) {
-                replacer.replace(file);
                 File path = file.getPath();
                 if (path == null) {
                     throw new MojoExecutionException("Path is empty");
                 }
+                replacer.replace(file);
                 path.getParentFile().mkdirs();
                 if (!path.createNewFile()) {
                     getLog().info("Overwrite file: " + path.getAbsolutePath());
@@ -58,7 +54,7 @@ public class WriteTextFilesMojo extends AbstractMojo {
                 }
                 Files.write(path.toPath(), Arrays.asList(file.getLines()), Charset.forName(charset));
             }
-        } catch (MojoExecutionException | MojoFailureException e) {
+        } catch (MojoExecutionException e) {
             throw e;
         } catch (Exception e) {
             throw new MojoExecutionException(e.getMessage(), e);
