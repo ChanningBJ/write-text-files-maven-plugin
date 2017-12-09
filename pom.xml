@@ -2,7 +2,7 @@
 
     <groupId>com.qiyi.spark</groupId>
     <artifactId>write-text-files-maven-plugin</artifactId>
-    <version>1.2</version>
+    <version>1.2.1</version>
     <packaging>maven-plugin</packaging>
 
     <name>Write Text Files Maven Plugin</name>

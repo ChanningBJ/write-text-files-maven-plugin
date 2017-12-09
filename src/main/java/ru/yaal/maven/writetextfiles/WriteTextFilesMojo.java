@@ -7,6 +7,7 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 
 import java.io.File;
+import java.io.IOException;
 import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.util.Arrays;
@@ -32,17 +33,7 @@ public class WriteTextFilesMojo extends AbstractMojo {
         if (files != null) {
             try {
                 for (FileParameter file : files) {
-                    File path = file.getPath();
-                    if (path == null) {
-                        throw new MojoExecutionException("Path is empty");
-                    }
-                    path.getParentFile().mkdirs();
-                    if (!path.createNewFile()) {
-                        getLog().info("Overwrite file: " + path.getAbsolutePath());
-                    } else {
-                        getLog().info("Write to new file: " + path.getAbsolutePath());
-                    }
-                    Files.write(path.toPath(), Arrays.asList(file.getLines()), Charset.forName(charset));
+                    if (generateFile(file)) continue;
                 }
             } catch (MojoExecutionException e) {
                 throw e;
@@ -52,6 +43,30 @@ public class WriteTextFilesMojo extends AbstractMojo {
         } else {
             getLog().warn("No files specified in configuration.");
         }
+    }
+
+    private boolean generateFile(FileParameter file) throws MojoExecutionException, IOException {
+        File path = file.getPath();
+        if (path == null) {
+            throw new MojoExecutionException("Path is empty");
+        }
+        path.getParentFile().mkdirs();
+        if (!path.createNewFile()) {
+            if(file.getOverwrite()) {
+                getLog().info("Overwrite file: " + path.getAbsolutePath());
+            } else {
+                getLog().info("File: " + path.getAbsolutePath()+" already exists, will not overwrite");
+                return true;
+            }
+        } else {
+            getLog().info("Write to new file: " + path.getAbsolutePath());
+        }
+        if(file.getTemplate()==null) {
+            Files.write(path.toPath(), Arrays.asList(file.getLines()), Charset.forName(charset));
+        } else {
+            getLog().info("template file: " + file.getTemplate());
+        }
+        return false;
     }
 
 }
